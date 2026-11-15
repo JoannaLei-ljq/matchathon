@@ -1,70 +1,91 @@
-# Getting Started with Create React App
+# Matchathon
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Find hackathon teammates who care about what you care about, and bring the skills your team is missing.
 
-## Available Scripts
+Matchathon started as a weekend team project at AthenaHacks 2025 ([original repo](https://github.com/chinmayeesawant/MyAthenaHacksProject)), built with three teammates. This repository is my redesigned rebuild of it: a new backend with a rewritten matching algorithm, real authentication, and tests. The frontend redesign is next.
 
-In the project directory, you can run:
+## How matching works
 
-### `npm start`
+You join a hackathon, then swipe through other people going to the same one. Each candidate gets a score from 0 to 100:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+| Signal | Weight | What it measures |
+|---|---|---|
+| Shared interests | 45% | Jaccard similarity of interests: shared ÷ combined |
+| Complementary skills | 45% | Skills they have that neither you nor your current teammates have (3 or more new skills = full marks) |
+| Already liked you | 10% | Makes a mutual match more likely. Used for ranking only, never shown |
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Every suggestion comes with a plain-language reason, for example:
 
-### `npm test`
+> You both care about Sustainability and Edtech, and Maya brings Swift, iOS and Figma — skills your team doesn't have yet.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+When two people like each other, they're put on a team. If one of them already has a team with room, the other joins it. Teams fill up to the hackathon's size limit (4 by default), and then matching stops for that team.
 
-### `npm run build`
+The algorithm is in [`server/src/services/scoring.js`](server/src/services/scoring.js). It's pure functions with no database access, so it's easy to unit test.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Tech stack
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- **API:** Node.js, Express 5, MongoDB with Mongoose
+- **Auth:** bcrypt password hashing, JWT bearer tokens, rate-limited login
+- **Validation:** zod
+- **Tests:** Node's built-in test runner, supertest, and mongodb-memory-server (an in-memory MongoDB, so no setup is needed)
+- **Frontend:** Next.js and Tailwind (redesign in progress)
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Data model
 
-### `npm run eject`
+```
+User       email, passwordHash, profile, skills[], interests[], hackathons[] → Hackathon
+Hackathon  name, slug, dates, location, maxTeamSize
+Swipe      from → User, to → User, hackathon → Hackathon, action: like | pass
+Team       hackathon → Hackathon, members[] → User
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Swipes live in their own collection instead of in arrays on the user, so "did they like me back?" is a single indexed lookup and user documents don't grow without bound. A unique index on `(from, hackathon, to)` means each person decides on each candidate at most once per hackathon. Adding someone to a team is a single atomic update that only succeeds while there's room, so two people can't overfill the same team at the same moment.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Running it locally
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+You need Node.js 20 or newer and a MongoDB database: either a local install, or a free cluster on [MongoDB Atlas](https://www.mongodb.com/atlas).
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```bash
+cd server
+npm install
+cp .env.example .env      # then fill in MONGO_URI and JWT_SECRET
+npm run seed              # sample hackathons and 12 sample people
+npm run dev               # http://localhost:5001
+```
 
-## Learn More
+The seed script prints a demo login you can use.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Run the tests (no database needed):
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```bash
+cd server
+npm test
+```
 
-### Code Splitting
+## API
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+All routes except register, login, and health need an `Authorization: Bearer <token>` header. Routes always act on the logged-in user. Nobody can read or edit another person's account by putting their email in a URL.
 
-### Analyzing the Bundle Size
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/auth/register` | Create an account and get a token |
+| `POST` | `/api/auth/login` | Log in and get a token |
+| `GET` | `/api/auth/me` | Your profile, with your hackathons |
+| `PATCH` | `/api/users/me` | Update your profile |
+| `GET` | `/api/users/:id` | Someone's public profile (no email) |
+| `GET` | `/api/hackathons` | All hackathons, with attendee counts |
+| `POST` / `DELETE` | `/api/hackathons/:id/join` | Join or leave a hackathon |
+| `GET` | `/api/matches/next?hackathon=:id` | The best next person to look at, with a score and reason |
+| `POST` | `/api/matches/swipe` | `{ hackathon, userId, action: "like" \| "pass" }` |
+| `GET` | `/api/matches?hackathon=:id` | People you've mutually matched with |
+| `GET` | `/api/teams` | Your teams, with members |
+| `PATCH` | `/api/teams/:id` | Rename your team |
+| `POST` | `/api/teams/:id/leave` | Leave a team (a team of two dissolves) |
+| `GET` | `/api/health` | Health check |
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## What changed from the hackathon version
 
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- **Matching:** the original sent every candidate's profile to an LLM and asked it to pick one. The rebuild ranks candidates with a transparent scoring algorithm and also counts the skills your teammates already have. It runs instantly, needs no API key, and always explains its pick.
+- **Security:** the original issued JWTs but never checked them, so anyone could read or edit any profile by email. Every route now verifies the token. Secrets live only in a git-ignored `.env`.
+- **Data model:** the original had unused Mongoose models and overlapping fields (`matches`, `matchedWith`, `team`). The rebuild uses four clear collections with indexes, and teams are scoped to a hackathon.
+- **Tests:** 19 automated tests covering the algorithm and the full API flow.
