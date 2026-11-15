@@ -2,7 +2,7 @@
 
 Find hackathon teammates who care about what you care about, and bring the skills your team is missing.
 
-Matchathon started as a weekend team project at AthenaHacks 2025 ([original repo](https://github.com/chinmayeesawant/MyAthenaHacksProject)), built with three teammates. This repository is my redesigned rebuild of it: a new backend with a rewritten matching algorithm, real authentication, and tests. The frontend redesign is next.
+Matchathon started as a weekend team project at AthenaHacks 2025 ([original repo](https://github.com/chinmayeesawant/MyAthenaHacksProject)), built with three teammates. This repository is my redesigned rebuild of it: a new backend with a rewritten matching algorithm, real authentication, and tests, plus a new café-themed frontend.
 
 ## How matching works
 
@@ -28,7 +28,15 @@ The algorithm is in [`server/src/services/scoring.js`](server/src/services/scori
 - **Auth:** bcrypt password hashing, JWT bearer tokens, rate-limited login
 - **Validation:** zod
 - **Tests:** Node's built-in test runner, supertest, and mongodb-memory-server (an in-memory MongoDB, so no setup is needed)
-- **Frontend:** Next.js and Tailwind (redesign in progress)
+- **Frontend:** Next.js 16 (App Router), React 19, Tailwind CSS 4, lucide icons
+
+## Design
+
+**MatchaOS**: the app is a retro desktop on grid paper. Every page is a window with a pixel-font title bar (`match_found.exe`, `team.dir`, `profile.cfg`), sitting on a sky-and-hills wallpaper with drifting pixel clouds, plus a taskbar and clock. Match reasons print in a terminal, a mutual match pops up a "System Alert", and the mascot is a pixel-art matcha latte. Sticky notes and tape add a hand-made scrapbook touch.
+
+Colors are Garden Matcha `#668B4A`, Milk Foam `#F8F1DC`, and Mocha `#5A4636`, with lemon sticky notes. Fonts: Bricolage Grotesque for headings, Space Mono for everything else, and the pixel font Silkscreen only for window title bars and the logo.
+
+The tokens live in [`client/app/globals.css`](client/app/globals.css).
 
 ## Data model
 
@@ -43,17 +51,36 @@ Swipes live in their own collection instead of in arrays on the user, so "did th
 
 ## Running it locally
 
-You need Node.js 20 or newer and a MongoDB database: either a local install, or a free cluster on [MongoDB Atlas](https://www.mongodb.com/atlas).
+You need Node.js 20 or newer.
+
+### Quick start (no database setup)
+
+This starts a throwaway in-memory MongoDB with sample data. Nothing is saved when you stop it.
+
+```bash
+cd server && npm install && npm run dev:memory     # API on http://localhost:5001
+```
+
+In a second terminal:
+
+```bash
+cd client && npm install && npm run dev            # site on http://localhost:3000
+```
+
+Log in as `demo.user@example.com` with the sample password `matcha-latte-123`.
+
+### With a real database
+
+Use a local MongoDB, or a free cluster on [MongoDB Atlas](https://www.mongodb.com/atlas).
 
 ```bash
 cd server
-npm install
 cp .env.example .env      # then fill in MONGO_URI and JWT_SECRET
 npm run seed              # sample hackathons and 12 sample people
 npm run dev               # http://localhost:5001
 ```
 
-The seed script prints a demo login you can use.
+The frontend reads the API address from `NEXT_PUBLIC_API_URL` (see `client/.env.example`). It defaults to `http://localhost:5001/api`.
 
 Run the tests (no database needed):
 

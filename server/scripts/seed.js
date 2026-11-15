@@ -3,6 +3,7 @@
 // Every sample account uses the password below. Never run this against production.
 
 import mongoose from 'mongoose';
+import { pathToFileURL } from 'node:url';
 import bcrypt from 'bcryptjs';
 import { loadConfig } from '../src/config.js';
 import { User } from '../src/models/User.js';
@@ -47,11 +48,8 @@ const people = [
   ['Elena', 'Rossi', 'USC', ['Data visualization', 'D3.js', 'Python'], ['Sustainability', 'AI for good'], ['athenahacks-2027'], 'Turning numbers into pictures.'],
 ];
 
-async function seed() {
-  const config = loadConfig();
-  await mongoose.connect(config.mongoUri);
-  console.log(`Seeding ${mongoose.connection.name}…`);
-
+/** Wipe and refill the database the current mongoose connection points at. */
+export async function seedDatabase() {
   await Promise.all([User.deleteMany({}), Hackathon.deleteMany({}), Swipe.deleteMany({}), Team.deleteMany({})]);
   await Promise.all([User.syncIndexes(), Hackathon.syncIndexes(), Swipe.syncIndexes(), Team.syncIndexes()]);
 
@@ -76,11 +74,19 @@ async function seed() {
 
   console.log(`Created ${created.length} hackathons and ${people.length} people.`);
   console.log(`Log in as demo.user@example.com with password "${SEED_PASSWORD}".`);
-  await mongoose.disconnect();
 }
 
-seed().catch(async (err) => {
-  console.error(err);
-  await mongoose.disconnect();
-  process.exit(1);
-});
+// Run directly: `npm run seed`
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const config = loadConfig();
+  try {
+    await mongoose.connect(config.mongoUri);
+    console.log(`Seeding ${mongoose.connection.name}…`);
+    await seedDatabase();
+  } catch (err) {
+    console.error(err);
+    process.exitCode = 1;
+  } finally {
+    await mongoose.disconnect();
+  }
+}

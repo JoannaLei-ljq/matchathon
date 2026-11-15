@@ -1,0 +1,236 @@
+@import "tailwindcss";
+
+/*
+  MatchaOS — a retro desktop on grid paper.
+  matcha = window chrome and actions, foam = window bodies, mocha = outlines and text,
+  lemon = sticky notes and highlights, sky = wallpaper.
+*/
+@theme {
+  --color-matcha: #668b4a;
+  --color-matcha-deep: #4e6e37;
+  --color-matcha-dark: #3f5a2c;
+  --color-matcha-soft: #e3ecd7;
+  --color-matcha-mist: #f0f5e9;
+  --color-foam: #f8f1dc;
+  --color-foam-light: #fffaf0;
+  --color-paper: #efe6cf;
+  --color-paper-line: #e0d3b2;
+  --color-mocha: #5a4636;
+  --color-mocha-muted: #8a7563;
+  --color-mocha-soft: #efe3d6;
+  --color-terminal: #2b241e;
+  --color-phosphor: #c9e3a8;
+  --color-lemon: #fbe9a0;
+  --color-lemon-deep: #e8c15a;
+  --color-sky: #bfe0ea;
+  --color-berry: #c8553d;
+
+  --font-mono: var(--font-space-mono), ui-monospace, monospace;
+  --font-pixel: var(--font-silkscreen), var(--font-space-mono), monospace;
+  --font-display: var(--font-bricolage), var(--font-space-mono), sans-serif;
+  --font-sans: var(--font-space-mono), ui-monospace, monospace;
+
+  --shadow-hard: 4px 4px 0 0 var(--color-matcha-dark);
+  --shadow-hard-sm: 2px 2px 0 0 var(--color-matcha-dark);
+
+  --animate-pop: pop 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  --animate-bob: bob 3.5s ease-in-out infinite;
+  --animate-blink: blink 1s steps(1) infinite;
+  --animate-drift: drift 60s linear infinite;
+  --animate-progress: progress 1.4s steps(8) infinite;
+
+  @keyframes progress {
+    from { clip-path: inset(0 100% 0 0); }
+    to { clip-path: inset(0 0 0 0); }
+  }
+
+  @keyframes pop {
+    from { opacity: 0; transform: scale(0.92) translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+  @keyframes drift {
+    from { transform: translateX(-10%); }
+    to { transform: translateX(110%); }
+  }
+}
+
+@layer base {
+  html {
+    background-color: var(--color-paper);
+    color: var(--color-mocha);
+  }
+  body {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    background-color: var(--color-paper);
+    background-image:
+      linear-gradient(var(--color-paper-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-paper-line) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  ::selection {
+    background: var(--color-lemon);
+  }
+  :focus-visible {
+    outline: 2px dashed var(--color-matcha-dark);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* ---------- windows ---------- */
+  .win {
+    background: var(--color-foam);
+    border: 2px solid var(--color-matcha-dark);
+    box-shadow: var(--shadow-hard);
+  }
+  .win-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.3rem 0.5rem;
+    background: var(--color-matcha);
+    color: var(--color-foam);
+    font-family: var(--font-pixel);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    border-bottom: 2px solid var(--color-matcha-dark);
+  }
+  .win-ctl {
+    display: inline-grid;
+    place-items: center;
+    width: 15px;
+    height: 15px;
+    border: 1.5px solid currentColor;
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  /* ---------- buttons ---------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    border: 2px solid var(--color-matcha-dark);
+    border-radius: 4px;
+    padding: 0.45rem 1rem;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    line-height: 1.2;
+    box-shadow: var(--shadow-hard-sm);
+    transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.12s ease;
+    cursor: pointer;
+    user-select: none;
+  }
+  .btn:hover:not(:disabled) {
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 0 var(--color-matcha-dark);
+  }
+  .btn:active:not(:disabled) {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+  }
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+  .btn-primary {
+    background: var(--color-matcha);
+    color: var(--color-foam-light);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-matcha-deep);
+  }
+  .btn-secondary {
+    background: var(--color-foam-light);
+    color: var(--color-mocha);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--color-lemon);
+  }
+
+  /* ---------- form fields (inset, like an old OS) ---------- */
+  .field {
+    width: 100%;
+    background: #fff;
+    border: 2px solid var(--color-mocha);
+    box-shadow: inset 2px 2px 0 0 var(--color-mocha-soft);
+    border-radius: 2px;
+    padding: 0.55rem 0.75rem;
+    color: var(--color-mocha);
+    font-family: var(--font-mono);
+  }
+  .field::placeholder {
+    color: var(--color-mocha-muted);
+    opacity: 0.75;
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--color-matcha);
+    box-shadow: inset 2px 2px 0 0 var(--color-matcha-soft), 0 0 0 3px var(--color-lemon);
+  }
+  .label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border: 1.5px solid var(--color-matcha-dark);
+    border-radius: 3px;
+    padding: 0.05rem 0.45rem;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  /* ---------- desktop wallpaper: sky, drifting clouds, rolling hills ---------- */
+  .wallpaper {
+    background:
+      radial-gradient(ellipse 70% 40% at 15% 18%, rgb(255 255 255 / 0.85), transparent 60%),
+      radial-gradient(ellipse 50% 30% at 80% 12%, rgb(255 255 255 / 0.7), transparent 60%),
+      linear-gradient(180deg, #a9d6e6 0%, #cfe8ef 45%, #eef4e2 72%, #dcebc5 100%);
+  }
+
+  .tape {
+    position: absolute;
+    width: 84px;
+    height: 24px;
+    background: rgb(232 193 90 / 0.6);
+    border-left: 2px dashed rgb(255 255 255 / 0.5);
+    border-right: 2px dashed rgb(255 255 255 / 0.5);
+    pointer-events: none;
+  }
+
+  .note-paper {
+    background: var(--color-lemon);
+    box-shadow: 3px 4px 0 rgb(90 70 54 / 0.25);
+    color: var(--color-mocha);
+  }
+
+  .pixelated {
+    image-rendering: pixelated;
+    shape-rendering: crispEdges;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
